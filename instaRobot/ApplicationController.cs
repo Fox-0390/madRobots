@@ -60,7 +60,6 @@ namespace instaRobot
         {
 
             App.RootFrame.GoBack();
-            //  root.RemoveBackEntry();
         }
 
 

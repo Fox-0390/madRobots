@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -9,8 +11,30 @@ using System.Windows.Media.Imaging;
 
 namespace instaRobot.Extensions
 {
+
+   
+
+
+
+
     public static class Extensions
     {
+
+
+            public static void AddRange<T>(this ObservableCollection<T> oc, IEnumerable<T> collection)
+            {
+                if (collection == null)
+                {
+                    throw new ArgumentNullException("collection");
+                }
+                foreach (var item in collection)
+                {
+                    oc.Add(item);
+                }
+
+
+            }
+    
         public static Task<Stream> OpeningTask(this WebClient webClient, Uri uri)
         {
             var tcs = new TaskCompletionSource<Stream>();
@@ -23,7 +47,9 @@ namespace instaRobot.Extensions
                 }
                 else
                 {
-                    tcs.SetResult(e.Result);
+                    bool b= tcs.TrySetResult(e.Result);
+                    
+                    
                 }
             };
 

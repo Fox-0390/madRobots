@@ -19,12 +19,7 @@ namespace instaRobot.IOC
 
             container.Register<IDataService, DataService>();
             container.Register<IHeadModel, HeadModel>(new PerContainerLifetime());
-         
-
-    
             container.Register<MainViewModel>();
-
-
             container.Register<DetailViewModel>();
 
 

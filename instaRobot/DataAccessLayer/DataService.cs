@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using instaRobot.Model;
 using RestSharp;
 using instaRobot.Extensions;
+using instaRobot.Strings;
 namespace instaRobot.DataAccessLayer
 {
     public class DataService : IDataService
@@ -15,11 +16,10 @@ namespace instaRobot.DataAccessLayer
 
             TaskCompletionSource<UserFindModel> task = new TaskCompletionSource<UserFindModel>();
 
-            string s1 = "https://api.instagram.com/v1/users/search?q=lina_inlakesh&access_token=1381075633.f59def8.4266cf4cabbd4618a8e0a60bcab5fc5e";
-
+            
             var t = new RestClient();
 
-            var req = await t.ExecuteAwait(new RestRequest(String.Format("https://api.instagram.com/v1/users/search?q={0}&access_token=1381075633.ca61e20.44a4dc7bd0ae43069548b5a73163a92a", s)));
+            var req = await t.ExecuteAwait(new RestRequest(String.Format(UrlStrings.SearchUserURL, s,UrlStrings.AccessToken)));
 
             if (req != null)
             {
@@ -33,11 +33,10 @@ namespace instaRobot.DataAccessLayer
 
         public async Task<UserAttributes> getUserAttributes(string id)
         {
-            string s = "https://api.instagram.com/v1/users/328837544/media/recent/?access_token=1381075633.ca61e20.44a4dc7bd0ae43069548b5a73163a92a";
-            TaskCompletionSource<UserAttributes> task = new TaskCompletionSource<UserAttributes>();
+           TaskCompletionSource<UserAttributes> task = new TaskCompletionSource<UserAttributes>();
             var t = new RestClient();
 
-            var req = await t.ExecuteAwait(new RestRequest(String.Format("https://api.instagram.com/v1/users/{0}/media/recent/?access_token=1381075633.ca61e20.44a4dc7bd0ae43069548b5a73163a92a", id)));
+            var req = await t.ExecuteAwait(new RestRequest(String.Format(UrlStrings.SearchMediaUser, id,UrlStrings.AccessToken)));
 
             if (req != null)
             {
@@ -45,5 +44,8 @@ namespace instaRobot.DataAccessLayer
             }
             return await task.Task;
         }
+
+
+      
     }
 }

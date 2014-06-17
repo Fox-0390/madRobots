@@ -14,36 +14,63 @@ namespace instaRobot.ViewModels
     public class MainViewModel : ViewModelBase
     {
 
-
+        /// <summary>
+        /// Service networking
+        /// </summary>
         private IDataService _dataService;
 
-        private UserDatum selectedDataum;
-
+       
+        /// <summary>
+        /// selected image collection
+        /// </summary>
+        IList<Datum> Collection = new List<Datum>();
     
         public  IHeadModel _headModel{get;set;}
         public MainViewModel(IDataService dataService)
         {
           
            
-            selectionPicCommand = new DelegateCommand(ExecuteSelectionPhotos);
+            tapPicCommand = new DelegateCommand(ExecuteTapPhotos);
             getPhotos = new DelegateCommand(ExecuteGetPhotos);
             _dataService = dataService;
             createCollage = new DelegateCommand(ExecuteCreateCollage);
+            findUsers = new DelegateCommand(FindUser);
+            IsEnforce = false;
+            IsVisiblePreviousButton = false;
         }
 
-        private async void  FindUser()
+
+        #region Suggest Command
+        private ICommand findUsers;
+
+        public ICommand FindUSers
         {
-            var res = await _dataService.getUsersByChar(Name);
-            if (res != null && res.data != null)
-            {
-               
-                foreach (var item in res.data)
-                {
-                    NameSuggests.Add(item);
-                }
-             
-            }
+            get { return findUsers; }
+            set { findUsers = value; }
         }
+
+
+        private async void FindUser(object obj)
+        {
+            if (!String.IsNullOrWhiteSpace(Name))
+            {
+                var res = await _dataService.getUsersByChar(Name);
+                if (res != null && res.data != null)
+                {
+                    NameSuggests.Clear();
+
+                    NameSuggests.AddRange(res.data);
+
+
+                }
+                else
+
+                    SetHeaderAttributes(false, "нет такого человека");
+            }
+
+
+        } 
+        #endregion
 
 
 
@@ -51,18 +78,19 @@ namespace instaRobot.ViewModels
 
         #region props autocompleteBox
         private string name;
-
-        public string Name
+        /// <summary>
+        /// User nickName
+        /// </summary>
+        public  string Name
         {
             get { return name; }
             set
             {
-                if ((value != name) && !String.IsNullOrWhiteSpace(value))
+                if (value != name)
                 {
                     name = value;
-
                     NotifyPropertyChanged("Name");
-                    FindUser();
+                    FindUSers.Execute(null);
                 }
             }
         }
@@ -84,7 +112,7 @@ namespace instaRobot.ViewModels
 
 
 
-
+        
         private ICommand getPhotos;
 
         public ICommand GetPhotos
@@ -95,25 +123,43 @@ namespace instaRobot.ViewModels
 
         private async void ExecuteGetPhotos(object obj)
         {
-            selectedDataum = NameSuggests.FirstOrDefault<UserDatum>(x => x.username == Name);
-            
-            var t= await _dataService.getUserAttributes(selectedDataum.id);
-            if (t!=null&&t.data!=null)
-            {
-                UserPics.Clear();
-                foreach (var item in t.data)
-                {
-                    UserPics.Add(item);
-                }
+            IsEnforce = false;
 
+            UserDatum selectedDataum = NameSuggests.FirstOrDefault<UserDatum>(x => x.username == Name);
+            UserAttributes t;
+            SetHeaderAttributes(true, String.Format("Собираем фотографии пользователя {0}", Name));
+            if (selectedDataum != null)
+            {
+
+                t = await _dataService.getUserAttributes(selectedDataum.id);
+                if (t != null && t.data != null)
+                {
+                    UserPics.Clear();
+                    foreach (var item in t.data)
+                    {
+                        UserPics.Add(item);
+                    }
+                    IsEnforce = true;
+                    SetHeaderAttributes(false, String.Empty);
+                    IsVisiblePreviousButton = true;
+                }
             }
+            else
+            {
+               
+                IsVisiblePreviousButton = false;
+                SetHeaderAttributes(false, String.Format("Не удалось загрузить пользователя {0}", Name));
+            }
+           
         }
 
 
 
         #region props and commands of multySelector
         private ObservableCollection<Datum> userPics = new ObservableCollection<Datum>();
-
+        /// <summary>
+        /// Items collection for binding
+        /// </summary>
         public ObservableCollection<Datum> UserPics
         {
             get { return userPics; }
@@ -121,20 +167,33 @@ namespace instaRobot.ViewModels
         }
 
 
-
-
-
-        IList<Datum> Collection = new List<Datum>();
-
-
-        private ICommand selectionPicCommand;
-
-        public ICommand SelectionPicCommand
+        private bool isEnforce;
+        /// <summary>
+        /// Props LongListSelector for clearing selected collection
+        /// </summary>
+        public bool IsEnforce
         {
-            get { return selectionPicCommand; }
-            set { selectionPicCommand = value; }
+            get { return isEnforce; }
+            set { isEnforce = value; NotifyPropertyChanged("IsEnforce"); }
         }
-        private void ExecuteSelectionPhotos(object obj)
+
+
+
+      
+
+
+
+       
+
+
+        private ICommand tapPicCommand;
+
+        public ICommand TapPicCommand
+        {
+            get { return tapPicCommand; }
+            set { tapPicCommand = value; }
+        }
+        private void ExecuteTapPhotos(object obj)
         {
             Collection.Clear();
             for (int i = 0; i < (obj as IList<object>).Count; i++)
@@ -148,7 +207,19 @@ namespace instaRobot.ViewModels
 
 
 
-        #region go to Send Page
+        #region  Appbar button commands 
+
+
+        private bool isVisiblePreviousButton;
+
+        public bool IsVisiblePreviousButton
+        {
+            get { return isVisiblePreviousButton; }
+            set { isVisiblePreviousButton = value; NotifyPropertyChanged("IsVisiblePreviousButton"); }
+        }
+        
+
+
 
         private ICommand createCollage;
 
@@ -171,10 +242,39 @@ namespace instaRobot.ViewModels
 
 
         #endregion
-
         
+       
 
 
+        #region Header Page
+        private string progressText;
+
+        public string ProgressText
+        {
+            get { return progressText; }
+            set { progressText = value; NotifyPropertyChanged("ProgressText"); }
+        }
+
+
+        private bool progress;
+
+        public bool Progress
+        {
+            get { return progress; }
+            set { progress = value; NotifyPropertyChanged("Progress"); }
+        }
+
+        /// <summary>
+        /// Set systemTray properties
+        /// </summary>
+        /// <param name="f">isVisible progress indicator</param>
+        /// <param name="text">text for progress indicator</param>
+        private void SetHeaderAttributes(bool f,string text)
+        {
+            Progress = f;
+            ProgressText = text;
+        } 
+        #endregion
 
     }
 }

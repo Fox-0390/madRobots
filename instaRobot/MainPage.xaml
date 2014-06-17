@@ -5,7 +5,7 @@
     xmlns:shell="clr-namespace:Microsoft.Phone.Shell;assembly=Microsoft.Phone"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
      xmlns:bar="clr-namespace:BindableApplicationBar;assembly=BindableApplicationBar"
-
+    xmlns:c4fun="clr-namespace:Coding4Fun.Toolkit.Controls.Converters;assembly=Coding4Fun.Toolkit.Controls"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
     xmlns:toolkit="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone.Controls.Toolkit"
@@ -19,8 +19,12 @@
     shell:SystemTray.IsVisible="True"
     
     DataContext="{Binding MainPage, Mode=OneWay, Source={StaticResource IOC}}">
-	<phone:PhoneApplicationPage.Resources>
-		<DataTemplate x:Key="DataTemplate1">
+    <shell:SystemTray.ProgressIndicator>
+        <shell:ProgressIndicator IsIndeterminate="{Binding Progress}" IsVisible="True"  Text="{Binding ProgressText}"/>
+    </shell:SystemTray.ProgressIndicator>
+    <phone:PhoneApplicationPage.Resources>
+        <c4fun:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <DataTemplate x:Key="DataTemplate1">
 			
                 <Image  HorizontalAlignment="Stretch"   Stretch="Fill" VerticalAlignment="Stretch" >
                     <Image.Source>
@@ -33,6 +37,7 @@
 			<TextBlock   Text="{Binding username}"/>
 			
 		</DataTemplate>
+    
 	</phone:PhoneApplicationPage.Resources>
 
     <!--Для контекста данных установлен верхний пример данных, и LayoutRoot содержит корневую сетку, где размещается все содержимое страницы-->
@@ -42,48 +47,14 @@
 			<RowDefinition Height="*"/>
 		</Grid.RowDefinitions>
 
-		<!-- ПРИМЕЧАНИЕ О ЛОКАЛИЗАЦИИ:
-            Чтобы локализовать отображаемые строки, скопируйте их значения в соответствующим образом названные
-            ключи в файле ресурсов нейтрального языка приложения (AppResources.resx), а затем
-            замените жестко заданное текстовое значение между кавычками атрибутов
-            на выражение привязки, указывающее на имя соответствующей строки.
-
-            Пример:
-
-                Text="{Binding Path=LocalizedResources.ApplicationTitle, Source={StaticResource LocalizedStrings}}"
-
-            Данная привязка указывает на строковый ресурс шаблона с именем "ApplicationTitle".
-
-            Добавление поддерживаемых языков на вкладку "Свойства проекта" создает
-            новый RESX-файл для каждого языка, в котором могут храниться переведенные значения
-            строк пользовательского интерфейса. Привязка в этих примерах вызывает отрисовку
-            значений атрибутов из RESX-файла, соответствующего
-            CurrentUICulture приложения во время выполнения.
-         -->
-
-		<!--Раскомментируйте, чтобы увидеть сетку выравнивания и выровнять
-            элементы управления по общим границам.  Верхнее поле изображения равно -32 пикселя, чтобы
-            осталось место для области уведомлений. Установите его равным 0 (или вообще удалите поле),
-            если область уведомлений скрыта.
-
-            Перед сдачей приложения удалите этот код XAML и само изображение.-->
-		<!--<Image Source="/Assets/AlignmentGrid.png" VerticalAlignment="Top" Height="800" Width="480" Margin="0,-32,0,0" Grid.Row="0" Grid.RowSpan="2" IsHitTestVisible="False" />-->
-		<i:Interaction.Triggers>
-			<i:EventTrigger>
-				<i:InvokeCommandAction Command="{Binding Loaded}"/>
-			</i:EventTrigger>
-		</i:Interaction.Triggers>
+		
+		
 
 		<!--TitlePanel содержит имя приложения и заголовок страницы-->
 		<StackPanel Grid.Row="0" Margin="12,17,0,28">
-			<toolkit:AutoCompleteBox x:Name="autoCompleteBox" VerticalAlignment="Top" Text="{Binding Name,Mode=TwoWay}"  ItemsSource="{Binding NameSuggests}"  ItemTemplate="{StaticResource DataTemplate2}" ValueMemberPath="username">
-				<i:Interaction.Triggers>
-					<i:EventTrigger EventName="SelectionChanged">
-						<i:InvokeCommandAction Command="{Binding SelectNameFromSuggest}" CommandParameter="{Binding SelectedItem, ElementName=autoCompleteBox}"/>
-					</i:EventTrigger>
-				</i:Interaction.Triggers>
-			</toolkit:AutoCompleteBox>
-			<Button Content="Давай коллаж" Command="{Binding GetPhotos}"/>
+            <toolkit:AutoCompleteBox x:Name="autoCompleteBox" VerticalAlignment="Top" Text="{Binding Name,Mode=TwoWay}"  ItemsSource="{Binding NameSuggests}"  ItemTemplate="{StaticResource DataTemplate2}" ValueMemberPath="username"/>
+
+            <Button Content="Давай коллаж" Command="{Binding GetPhotos}"/>
 		</StackPanel>
 
         <!--ContentPanel содержит LongListSelector и LongListSelector ItemTemplate. Поместите здесь дополнительное содержимое-->
@@ -93,10 +64,10 @@
                                     LayoutMode="Grid" 
                                     IsSelectionEnabledChanged="longListSelector_IsSelectionEnabledChanged"
                                     ItemsSource="{Binding UserPics}"  
-                                    ItemTemplate="{StaticResource DataTemplate1}" EnforceIsSelectionEnabled="True">
+                                    ItemTemplate="{StaticResource DataTemplate1}" EnforceIsSelectionEnabled="{Binding IsEnforce}">
 				<i:Interaction.Triggers>
 					<i:EventTrigger EventName="SelectionChanged">
-                        <i:InvokeCommandAction  Command="{Binding SelectionPicCommand}" CommandParameter="{Binding SelectedItems, ElementName=longListSelector}"/>
+                        <i:InvokeCommandAction  Command="{Binding TapPicCommand}" CommandParameter="{Binding SelectedItems, ElementName=longListSelector}"/>
 					</i:EventTrigger>
 				</i:Interaction.Triggers>
 			</toolkit:LongListMultiSelector>
@@ -106,11 +77,11 @@
 
 	</Grid>
     <bar:Bindable.ApplicationBar>
-        <bar:BindableApplicationBar>
+        <bar:BindableApplicationBar IsVisible="{Binding IsVisiblePreviousButton}">
             <bar:BindableApplicationBarButton
             IconUri="/Assets/Icons/check.png"
-            Text="Preview"
-                Command="{Binding CreateCollage}"
+            Text="Preview"  
+            Command="{Binding CreateCollage,Mode=TwoWay}"
           />
         
         </bar:BindableApplicationBar>
